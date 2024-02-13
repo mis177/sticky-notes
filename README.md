@@ -4,7 +4,7 @@ STICKY_NOTES
 ## Features
 Widget that puts its child in Sticky Note that can be moved in borders of its parent.
 
-![Example notes containin Text, Icon and Image](image.png) 
+![Example notes containin Text, Icon and Image](https://github.com/mis177/sticky-notes/blob/main/image.png?raw=true) 
 
 ## Getting started
 

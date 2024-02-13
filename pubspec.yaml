@@ -1,6 +1,6 @@
 name: sticky_notes
 description: "Draggable Sticky Notes within parent Stack. Notes can be customized."
-version: 0.0.1
+version: 0.0.4
 repository: "https://github.com/mis177/sticky-notes"
 
 environment:
@@ -15,6 +15,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+
+platforms:
+  android:
+  ios:
 
 
 flutter:
