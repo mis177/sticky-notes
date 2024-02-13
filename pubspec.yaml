@@ -1,6 +1,6 @@
 name: sticky_notes
 description: "Draggable Sticky Notes within parent Stack. Notes can be customized."
-version: 0.0.4
+version: 0.0.6
 repository: "https://github.com/mis177/sticky-notes"
 
 environment:
