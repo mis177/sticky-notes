@@ -6,6 +6,8 @@ Widget that puts its child in Sticky Note that can be moved in borders of its pa
 
 ![Example notes containin Text, Icon and Image](https://github.com/mis177/sticky-notes/blob/main/image.png?raw=true) 
 
+![Animation](https://github.com/mis177/sticky-notes/assets/56123042/67c7dbc8-e8b8-41dc-92a9-3590a2d66e7d)
+
 ## Getting started
 
 Add package to your project.
