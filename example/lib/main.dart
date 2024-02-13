@@ -29,14 +29,16 @@ class _StickyNotesTestState extends State<StickyNotesTest> {
   String note1 = 'Test Note 1';
 
   List<StickyNote> stickyNotes = [];
+  List<GlobalKey<State<StatefulWidget>>> notesKeys = [
+    GlobalKey(),
+    GlobalKey(),
+    GlobalKey()
+  ];
 
-  @override
-  void initState() {
-    notesTextController = TextEditingController();
-    // populate list of StickyNote with examples with text, Icon and Image
+  void setStickyNotes() {
     stickyNotes = [
       StickyNote(
-        key: GlobalKey(),
+        key: notesKeys[0],
         id: 1,
         width: 100,
         height: 100,
@@ -63,6 +65,7 @@ class _StickyNotesTestState extends State<StickyNotesTest> {
               }));
           setState(() {
             note1 = notesTextController.text;
+            setStickyNotes();
           });
         },
         // handle 'Delete' button event from LongPress menu, delete note from list
@@ -83,7 +86,7 @@ class _StickyNotesTestState extends State<StickyNotesTest> {
         ),
       ),
       StickyNote(
-        key: GlobalKey(),
+        key: notesKeys[1],
         id: 2,
         width: 100,
         height: 100,
@@ -103,7 +106,7 @@ class _StickyNotesTestState extends State<StickyNotesTest> {
         ),
       ),
       StickyNote(
-        key: GlobalKey(),
+        key: notesKeys[2],
         id: 3,
         width: 100,
         height: 100,
@@ -124,6 +127,13 @@ class _StickyNotesTestState extends State<StickyNotesTest> {
         ),
       ),
     ];
+  }
+
+  @override
+  void initState() {
+    notesTextController = TextEditingController();
+    // populate list of StickyNote with examples with text, Icon and Image
+    setStickyNotes();
     super.initState();
   }
 
