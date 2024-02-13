@@ -1,39 +1,78 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+STICKY_NOTES
 
 ## Features
+Widget that puts its child in Sticky Note that can be moved in borders of its parent.
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+![Example notes containin Text, Icon and Image](image.png) 
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Add package to your project.
+Create and place StickyNotes objects inside Stack Widget. Bounds of that Stack are bounds of Sticky Notes.
+
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
+Retruns draggable (inside parent Container) sticky note. Long press shows menu with default edit, color change and delete options. Single Tap makes note bigger and provides InteractiveViewer to its child (enables zooming and panning). 
 ```dart
-const like = 'sample';
+ @override
+  Widget build(BuildContext context) {   
+    String testNote = 'First test note';
+    TextEditingController noteTextController = TextEditingController();
+    return Scaffold(
+      body: Center(
+        child: Container(
+          color: Colors.green,
+          height: 500,
+          width: 300,
+          child: Stack(
+              children: [
+                StickyNote(
+                  width: 100,
+                  height: 100,
+                  colorsEdit: const [
+                    Colors.green,
+                    Colors.yellow,
+                    Colors.orange,
+                    Colors.cyan
+                  ],
+                  onEdit: () async {
+                    notesTextController.text = testNote;
+                    await showDialog(
+                        context: context,
+                        builder: ((context) {
+                          return AlertDialog(
+                            title: const Text('Your note'),
+                            icon: const Icon(Icons.note),
+                            content: TextField(
+                              controller: noteTextController,
+                            ),
+                          );
+                        }));
+                    setState(() {
+                      testNote = noteTextController.text;
+                    });
+                  },
+                  child: Center(
+                    child: Text(
+                      testNote,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ]),
+        ),
+      ),
+    );
+  }
 ```
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+It is my first package so any feedback is appreciated. It is first version, updates coming soon.
+Contact: jamroz.michal7@gmail.com
