@@ -2,41 +2,76 @@ library sticky_notes;
 
 import 'package:flutter/material.dart';
 
+/// Draggable StickyNote with child Widget, 3 options menu upon [onLongPress] and zoom with [InteractiveViewer] [onTap].
+// ignore: must_be_immutable
 class StickyNote extends StatefulWidget {
-  const StickyNote({
+  ///
+  /// Creates StickyNote which must be child to [Stack].
+  StickyNote({
     super.key,
     this.id = -1,
     this.color = Colors.yellow,
     this.onDelete,
     this.onEdit,
+    this.onDragEnd,
     this.colorsEdit = const [],
     this.removeOptionName = 'Delete',
     this.colorOptionName = 'Color',
     this.editOptionName = 'Edit',
+    this.startingPosition = const Offset(0, 0),
     required this.width,
     required this.height,
     required this.child,
   });
+
+  /// Note id.
   final int id;
-  final Color color;
+
+  /// Note color.
+  Color color;
+
+  /// Note width.
   final double width;
+
+  /// Note height.
   final double height;
+
+  /// Starting position of note's top left corner related to parent.
+  final Offset startingPosition;
+
+  /// Child [Widget] that is displayed inside note.
   final Widget child;
 
+  /// Name of first option in menu after [onLongPress] on note.
+  final String editOptionName;
+
+  /// Function running after first option in menu is pressed.
+  final Function()? onEdit;
+
+  /// Name of color change option (second) in menu after [onLongPress] on note.
   final String colorOptionName;
+
+  /// List of available colors in changing color menu.
   final List<Color> colorsEdit;
 
+  /// Name of third option in menu after [onLongPress] on note.
   final String removeOptionName;
+
+  /// Function running after third option in menu is pressed.
   final Function()? onDelete;
-  final String editOptionName;
-  final Function()? onEdit;
+
+  /// Function running after user ends dragging note. It's argument is position of note related to parent.
+  final Function(Offset)? onDragEnd;
+
+  /// Current note position property. Returns [Offset] value, top left corner of parent widget is (0,0).
+  late Offset position = startingPosition;
 
   @override
   State<StickyNote> createState() => _StickyNoteState();
 }
 
 class _StickyNoteState extends State<StickyNote> {
-  Offset _position = const Offset(0, 0);
+  late Offset _position;
   Offset _containerPosition = const Offset(0, 0);
 
   late final double _maxPositionY;
@@ -49,8 +84,8 @@ class _StickyNoteState extends State<StickyNote> {
   @override
   void initState() {
     super.initState();
-
     _noteColor = widget.color;
+    _position = widget.startingPosition;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // get position of parent widget so position can be calculated inlcuding this
@@ -95,9 +130,14 @@ class _StickyNoteState extends State<StickyNote> {
                 } else {
                   newPosY = offset.dy;
                 }
-
+                if (widget.onDragEnd != null) {
+                  // function with argument of current position (inside parent) of note's top left vertex
+                  widget.onDragEnd!(Offset(newPosX - _containerPosition.dx,
+                      newPosY - _containerPosition.dy));
+                }
                 setState(() {
                   _position = Offset(newPosX, newPosY);
+                  widget.position = _position;
                 });
               },
               feedback: GestureDetector(
@@ -154,6 +194,7 @@ class _StickyNoteState extends State<StickyNote> {
                                 onTap: () {
                                   setState(() {
                                     _noteColor = color;
+                                    widget.color = _noteColor;
                                   });
                                 },
                               ));
