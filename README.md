@@ -8,7 +8,6 @@ Widget that puts its child in Sticky Note that can be moved in borders of its pa
 Running Example code:
 
 
-![Example usage](https://github.com/mis177/sticky-notes/assets/56123042/91bb434a-a5d5-4bb7-8fbd-8416e13a746c  )
 
 
 ![usage](https://github.com/mis177/sticky-notes/assets/56123042/91bb434a-a5d5-4bb7-8fbd-8416e13a746c)
