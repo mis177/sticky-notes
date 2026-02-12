@@ -1,6 +1,6 @@
 name: sticky_notes
 description: A draggable, interactive sticky note widget for Flutter.
-version: 1.0.0
+version: 1.0.1
 repository: "https://github.com/mis177/sticky-notes"
 homepage: https://github.com/mis177/sticky-notes
 environment:
