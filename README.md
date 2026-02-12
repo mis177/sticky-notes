@@ -128,6 +128,7 @@ Planned features:
 * Persistent storage of notes
 * Multi-board support
 * More customizable UI
+* Sticky notes board with some default options from example\lib\advanced_demo.dart
 
 Contact: [jamroz.michal7@gmail.com](mailto:jamroz.michal7@gmail.com)
 
