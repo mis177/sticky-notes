@@ -2,69 +2,100 @@ library sticky_notes;
 
 import 'package:flutter/material.dart';
 
-/// Draggable StickyNote with child Widget, 3 options menu upon [onLongPress] and zoom with [InteractiveViewer] [onTap].
-// ignore: must_be_immutable
+/// A draggable, interactive sticky note widget.
+///
+/// Features:
+/// - Drag & drop within a bounded board area
+/// - Animated preview with InteractiveViewer
+/// - Context menu (edit, color, delete)
+/// - Flexible content (`child`) for any widget type
+/// - Callbacks for edit, color change, delete, and position change
 class StickyNote extends StatefulWidget {
-  ///
-  /// Creates StickyNote which must be child to [Stack].
-  StickyNote({
+  /// Creates a new sticky note.
+  const StickyNote({
     super.key,
-    this.id = -1,
-    this.color = Colors.yellow,
-    this.onDelete,
-    this.onEdit,
-    this.onDragEnd,
-    this.colorsEdit = const [],
-    this.removeOptionName = 'Delete',
-    this.colorOptionName = 'Color',
-    this.editOptionName = 'Edit',
-    this.startingPosition = const Offset(0, 0),
-    required this.width,
-    required this.height,
+    required this.id,
+    required this.size,
+    required this.initialPosition,
     required this.child,
+    required this.boardSize,
+    this.previewChild,
+    this.initialColor = Colors.yellow,
+    this.availableColors = const [],
+    this.onEdit,
+    this.onDelete,
+    this.onPositionChanged,
+    this.onColorChanged,
+    this.minVisibleArea = 32,
+    this.onPanStart,
+    this.onTap,
+    this.colorLabel = 'Color',
+    this.editLabel = 'Edit',
+    this.deleteLabel = 'Delete',
+    this.pickColorTitle = 'Pick color',
+    this.syncWithInitialPosition = false,
   });
 
-  /// Note id.
-  final int id;
+  /// Unique identifier of the sticky note.
+  final String id;
 
-  /// Note color.
-  Color color;
+  /// Size of the sticky note.
+  final Size size;
 
-  /// Note width.
-  final double width;
+  /// Initial position on the board.
+  final Offset initialPosition;
 
-  /// Note height.
-  final double height;
+  /// The color of the sticky note.
+  final Color initialColor;
 
-  /// Starting position of note's top left corner related to parent.
-  final Offset startingPosition;
-
-  /// Child [Widget] that is displayed inside note.
+  /// The widget displayed inside the note.
   final Widget child;
 
-  /// Name of first option in menu after [onLongPress] on note.
-  final String editOptionName;
+  /// Optional widget used in the expanded preview.
+  final Widget? previewChild;
 
-  /// Function running after first option in menu is pressed.
-  final Function()? onEdit;
+  /// List of colors available for selection.
+  final List<Color> availableColors;
 
-  /// Name of color change option (second) in menu after [onLongPress] on note.
-  final String colorOptionName;
+  /// Minimum visible area when dragged to board edges.
+  final double minVisibleArea;
 
-  /// List of available colors in changing color menu.
-  final List<Color> colorsEdit;
+  /// Size of the board (used to constrain dragging).
+  final Size boardSize;
 
-  /// Name of third option in menu after [onLongPress] on note.
-  final String removeOptionName;
+  /// Callback when the note is edited.
+  final VoidCallback? onEdit;
 
-  /// Function running after third option in menu is pressed.
-  final Function()? onDelete;
+  /// Callback when the note is deleted.
+  final VoidCallback? onDelete;
 
-  /// Function running after user ends dragging note. It's argument is position of note related to parent.
-  final Function(Offset)? onDragEnd;
+  /// Callback when the note's position changes.
+  final ValueChanged<Offset>? onPositionChanged;
 
-  /// Current note position property. Returns [Offset] value, top left corner of parent widget is (0,0).
-  late Offset position = startingPosition;
+  /// Callback when the note's color changes.
+  final ValueChanged<Color>? onColorChanged;
+
+  /// Text for the "change color" menu item.
+  final String colorLabel;
+
+  /// Text for the "edit" menu item.
+  final String editLabel;
+
+  /// Text for the "delete" menu item.
+  final String deleteLabel;
+
+  /// Title for the color picker dialog.
+  final String pickColorTitle;
+
+  /// Callback when the user starts dragging the note.
+  final VoidCallback? onPanStart;
+
+  /// Callback when the note is tapped.
+  final VoidCallback? onTap;
+
+  /// If true, the note will update its position to match `initialPosition` whenever it changes.
+  /// This allows external control of the note's position.
+  final bool syncWithInitialPosition;
 
   @override
   State<StickyNote> createState() => _StickyNoteState();
@@ -72,163 +103,205 @@ class StickyNote extends StatefulWidget {
 
 class _StickyNoteState extends State<StickyNote> {
   late Offset _position;
-  Offset _containerPosition = const Offset(0, 0);
-
-  late final double _maxPositionY;
-  late final double _minPositionY;
-  late final double _maxPositionX;
-  late final double _minPositionX;
-
-  late Color _noteColor;
+  late Color _color;
+  final MenuController _menuController = MenuController();
 
   @override
   void initState() {
     super.initState();
-    _noteColor = widget.color;
-    _position = widget.startingPosition;
+    _position = widget.initialPosition;
+    _color = widget.initialColor;
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // get position of parent widget so position can be calculated inlcuding this
-      final renderBox = context.findRenderObject() as RenderBox;
-      _containerPosition = renderBox.localToGlobal(Offset.zero);
+  @override
+  void didUpdateWidget(covariant StickyNote oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-      _position = _containerPosition;
+    if (widget.syncWithInitialPosition) {
+      _position = widget.initialPosition;
+    }
 
-      // coordinates beyond which user can't drag note
-      _maxPositionX =
-          renderBox.size.width + _containerPosition.dx - widget.width;
-      _minPositionX = _containerPosition.dx;
-      _maxPositionY =
-          renderBox.size.height + _containerPosition.dy - widget.height;
-      _minPositionY = _containerPosition.dy;
+    if (widget.initialColor != oldWidget.initialColor) {
+      _color = widget.initialColor;
+    }
+  }
+
+  void _onPanStart(DragStartDetails details) {
+    if (widget.onPanStart != null) widget.onPanStart!();
+  }
+
+  void _onTap() {
+    if (widget.onTap != null) widget.onTap!();
+  }
+
+  /// Shows an animated, zoomable preview of the note.
+  void _showPreview() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      pageBuilder: (_, __, ___) {
+        return const SizedBox.shrink();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final scale = CurvedAnimation(parent: animation, curve: Curves.easeOutBack).value;
+        final opacity = animation.value;
+        final screenSize = MediaQuery.of(context).size;
+        final noteRatio = widget.size.width / widget.size.height;
+        double maxWidth = screenSize.width * 0.9;
+        double maxHeight = screenSize.height * 0.9;
+        double width = maxWidth;
+        double height = width / noteRatio;
+        if (height > maxHeight) {
+          height = maxHeight;
+          width = height * noteRatio;
+        }
+        return Opacity(
+          opacity: opacity,
+          child: Transform.scale(
+            scale: scale,
+            child: Center(
+              child: GestureDetector(
+                onTap: () {},
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Material(
+                    color: _color,
+                    elevation: 8,
+                    child: SizedBox(
+                      width: width,
+                      height: height,
+                      child: InteractiveViewer(
+                        clipBehavior: Clip.hardEdge,
+                        panEnabled: true,
+                        boundaryMargin: EdgeInsets.zero,
+                        minScale: 1.0,
+                        maxScale: 3.0,
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: SizedBox(
+                            width: widget.size.width,
+                            height: widget.size.height,
+                            child: widget.previewChild ?? widget.child,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 300),
+    );
+  }
+
+  /// Opens a color picker dialog and updates the note color.
+  Future<void> _pickColor() async {
+    final selectedColor = await showDialog<Color>(
+      context: context,
+      builder: (_) => SimpleDialog(
+        title: Text(widget.pickColorTitle),
+        children: widget.availableColors
+            .map(
+              (color) => GestureDetector(
+                onTap: () => Navigator.pop(context, color),
+                child: Container(
+                  height: 40,
+                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (selectedColor != null) {
+      setState(() => _color = selectedColor);
+      widget.onColorChanged?.call(selectedColor);
+    }
+  }
+
+  /// Handles dragging and constrains the note within the board.
+  void _onPanUpdate(DragUpdateDetails details) {
+    final minX = -widget.size.width + widget.minVisibleArea;
+    final minY = -widget.size.height + widget.minVisibleArea;
+    final maxX = widget.boardSize.width - widget.minVisibleArea;
+    final maxY = widget.boardSize.height - widget.minVisibleArea;
+
+    setState(() {
+      _position = Offset(
+        (_position.dx + details.delta.dx).clamp(minX, maxX),
+        (_position.dy + details.delta.dy).clamp(minY, maxY),
+      );
     });
+  }
+
+  /// Callback when dragging ends.
+  void _onPanEnd(DragEndDetails details) {
+    widget.onPositionChanged?.call(_position);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-            left: _position.dx - _containerPosition.dx,
-            top: _position.dy - _containerPosition.dy,
-            child: Draggable(
-              onDraggableCanceled: (velocity, offset) {
-                double newPosX, newPosY;
-
-                if (offset.dx > _maxPositionX) {
-                  newPosX = _maxPositionX;
-                } else if (offset.dx < _minPositionX) {
-                  newPosX = _minPositionX;
-                } else {
-                  newPosX = offset.dx;
-                }
-
-                if (offset.dy > _maxPositionY) {
-                  newPosY = _maxPositionY;
-                } else if (offset.dy < _minPositionY) {
-                  newPosY = _minPositionY;
-                } else {
-                  newPosY = offset.dy;
-                }
-                if (widget.onDragEnd != null) {
-                  // function with argument of current position (inside parent) of note's top left vertex
-                  widget.onDragEnd!(Offset(newPosX - _containerPosition.dx,
-                      newPosY - _containerPosition.dy));
-                }
-                setState(() {
-                  _position = Offset(newPosX, newPosY);
-                  widget.position = _position;
-                });
+    return Positioned(
+      left: _position.dx,
+      top: _position.dy,
+      child: MenuAnchor(
+        alignmentOffset: Offset(widget.size.width, -widget.size.height),
+        controller: _menuController,
+        menuChildren: [
+          if (widget.availableColors.isNotEmpty)
+            MenuItemButton(
+              onPressed: () {
+                _menuController.close();
+                _pickColor();
               },
-              feedback: GestureDetector(
-                child: Container(
-                  height: widget.height,
-                  width: widget.width,
-                  color: _noteColor,
-                  child: widget.child,
-                ),
+              child: Text(widget.colorLabel),
+            ),
+          MenuItemButton(
+            onPressed: () {
+              _menuController.close();
+              widget.onEdit?.call();
+            },
+            child: Text(widget.editLabel),
+          ),
+          MenuItemButton(
+            onPressed: () {
+              _menuController.close();
+              widget.onDelete?.call();
+            },
+            child: Text(widget.deleteLabel),
+          ),
+        ],
+        builder: (context, controller, child) {
+          return GestureDetector(
+            onPanStart: _onPanStart,
+            onPanUpdate: _onPanUpdate,
+            onPanEnd: _onPanEnd,
+            onLongPress: () => controller.open(),
+            onTap: () {
+              _onTap();
+              _showPreview();
+            },
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(8),
+              color: _color,
+              child: SizedBox(
+                width: widget.size.width,
+                height: widget.size.height,
+                child: widget.child,
               ),
-              child: GestureDetector(
-                child: Container(
-                  height: widget.height,
-                  width: widget.width,
-                  color: _noteColor,
-                  child: widget.child,
-                ),
-                onTap: () async {
-                  await showDialog(
-                      context: context,
-                      builder: ((context) {
-                        return AlertDialog(
-                          backgroundColor: _noteColor,
-                          content: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                  minHeight: 0,
-                                  maxHeight:
-                                      MediaQuery.of(context).size.height / 2),
-                              child: InteractiveViewer(
-                                  child: Center(child: widget.child))),
-                        );
-                      }));
-                },
-                onLongPress: () async {
-                  await showMenu(
-                      context: context,
-                      position: RelativeRect.fromLTRB(
-                        _position.dx + widget.width,
-                        _position.dy,
-                        _position.dx + widget.width,
-                        0,
-                      ),
-                      items: [
-                        PopupMenuItem(
-                          child: Text(widget.colorOptionName),
-                          onTap: () async {
-                            List<PopupMenuItem> colorOptions = [];
-                            for (var color in widget.colorsEdit) {
-                              colorOptions.add(PopupMenuItem(
-                                child: Container(
-                                  height: kMinInteractiveDimension,
-                                  color: color,
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    _noteColor = color;
-                                    widget.color = _noteColor;
-                                  });
-                                },
-                              ));
-                            }
-                            if (colorOptions.isNotEmpty) {
-                              await showMenu(
-                                  context: context,
-                                  position: RelativeRect.fromLTRB(
-                                    _position.dx + widget.width,
-                                    _position.dy,
-                                    _position.dx + widget.width,
-                                    0,
-                                  ),
-                                  items: colorOptions);
-                            }
-                          },
-                        ),
-                        PopupMenuItem(
-                          child: Text(widget.editOptionName),
-                          onTap: () {
-                            if (widget.onEdit != null) widget.onEdit!();
-                          },
-                        ),
-                        PopupMenuItem(
-                          child: Text(widget.removeOptionName),
-                          onTap: () {
-                            if (widget.onDelete != null) widget.onDelete!();
-                          },
-                        )
-                      ]);
-                },
-              ),
-            ))
-      ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
