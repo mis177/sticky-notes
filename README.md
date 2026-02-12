@@ -21,6 +21,9 @@ Place any widget inside a sticky note that can be moved, edited, color-changed, 
 ![advanced_example2](https://github.com/user-attachments/assets/24ca7d89-f90c-4278-ad55-e31d7fdbf5a2)
 
 
+
+---
+
 ## Getting Started
 
 Add the package to your `pubspec.yaml`:
