@@ -132,8 +132,3 @@ Planned features:
 
 Contact: [jamroz.michal7@gmail.com](mailto:jamroz.michal7@gmail.com)
 
----
-
-## License
-
-MIT License
